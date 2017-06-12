@@ -55,7 +55,7 @@ void parseData(byte* data)
 }
 
 
-void udpateUsbMouseEvent(void)
+void updateUsbMouseEvent(void)
 {
   Mouse.move(move_x, -move_y);
   if (button_l) {
@@ -86,8 +86,7 @@ void loop() {
     for (i = 0; i < 5; i++) readBuff[i] = swSer.read();
     if (checkDataValid(readBuff) == true) {
       parseData(readBuff);
-      //showData();
-      udpateUsbMouseEvent();
+      updateUsbMouseEvent();
     } else {
       Serial.println("skipped");
       while (swSer.available() > 0) {
@@ -96,3 +95,5 @@ void loop() {
     }
   }
 }
+
+
