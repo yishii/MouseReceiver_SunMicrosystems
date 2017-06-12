@@ -1,27 +1,35 @@
 /*
- * Sun Microsystems Mouse signal receiver
- * Tested with Arduino Duemilanove
- * 
- * Referred document : http://www.rosenau-ka.de/ps2sun/
- * 
- * Pin connection
- *  +5V --- Arduino 5V
- *  GND --- Arduino GND
- *  Mouse data --- Arduino Digital pin 2
- */
-#include <SoftwareSerial.h>
+   Sun Microsystems Mouse signal receiver
+   Tested with Arduino Leonardo
 
-SoftwareSerial swSer(2, 3, true);
+   Yasuhiro ISHII ishii.yasuhiro@gmail.com
+   Twitter : @yishii
+
+   Referred document : http://www.rosenau-ka.de/ps2sun/
+
+   Pin connection
+    +5V        --- Arduino 5V
+    GND        --- Arduino GND
+    Mouse data --- Arduino Digital pin 8
+*/
+#include <SoftwareSerial.h>
+#include "Mouse.h"
+
+SoftwareSerial swSer(8, 2, true);
 bool button_l;
 bool button_m;
 bool button_r;
-int32_t pos_x;
-int32_t pos_y;
+int16_t move_x;
+int16_t move_y;
 
 void setup() {
+  pinMode(13, INPUT);
+  digitalWrite(13, LOW);
   Serial.begin(115200);
+  while (!Serial);
   swSer.begin(1200);
-  Serial.println("Sun Microsystems mouse receiver");
+  Serial.println("Sun Microsystems mouse converter");
+  Mouse.begin();
 }
 
 bool checkDataValid(byte* data)
@@ -41,23 +49,32 @@ void parseData(byte* data)
   button_m = data[0] & 2 ? true : false;
   button_r = data[0] & 1 ? true : false;
 
-  x = data[1] + data[3];
-  y = data[2] + data[4];
+  move_x = data[1] + data[3];
+  move_y = data[2] + data[4];
 
-  pos_x += x;
-  pos_y += y;
 }
 
-static char str[64];
-void showData(void)
+
+void udpateUsbMouseEvent(void)
 {
-  sprintf(str, "[%c][%c][%c] ",
-          button_l ? ' ' : '*',
-          button_m ? ' ' : '*',
-          button_r ? ' ' : '*'
-         );
-  Serial.print(str);
-  Serial.print("("); Serial.print(pos_x);Serial.print(",");Serial.print(pos_y);Serial.println(")");
+  Mouse.move(move_x, -move_y);
+  if (button_l) {
+    Mouse.release(MOUSE_LEFT);
+    digitalWrite(13, HIGH);
+  } else {
+    Mouse.press(MOUSE_LEFT);
+    digitalWrite(13, LOW);
+  }
+  if (button_m) {
+    Mouse.release(MOUSE_MIDDLE);
+  } else {
+    Mouse.press(MOUSE_MIDDLE);
+  }
+  if (button_r) {
+    Mouse.release(MOUSE_RIGHT);
+  } else {
+    Mouse.press(MOUSE_RIGHT);
+  }
 }
 
 void loop() {
@@ -65,14 +82,15 @@ void loop() {
   byte readBuff[5];
   volatile byte tmp;
 
-  while (swSer.available() >= 5) {
+  if (swSer.available() >= 5) {
     for (i = 0; i < 5; i++) readBuff[i] = swSer.read();
     if (checkDataValid(readBuff) == true) {
       parseData(readBuff);
-      showData();
+      //showData();
+      udpateUsbMouseEvent();
     } else {
       Serial.println("skipped");
-      while(swSer.available() > 0){
+      while (swSer.available() > 0) {
         tmp = swSer.read();
       }
     }
