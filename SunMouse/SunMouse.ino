@@ -23,7 +23,7 @@ int16_t move_x;
 int16_t move_y;
 
 void setup() {
-  pinMode(13, INPUT);
+  pinMode(13, OUTPUT);
   digitalWrite(13, LOW);
   Serial.begin(115200);
   while (!Serial);
@@ -60,10 +60,10 @@ void updateUsbMouseEvent(void)
   Mouse.move(move_x, -move_y);
   if (button_l) {
     Mouse.release(MOUSE_LEFT);
-    digitalWrite(13, HIGH);
+    digitalWrite(13, LOW);
   } else {
     Mouse.press(MOUSE_LEFT);
-    digitalWrite(13, LOW);
+    digitalWrite(13, HIGH);
   }
   if (button_m) {
     Mouse.release(MOUSE_MIDDLE);
